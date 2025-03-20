@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorPrimary"
+    tools:context="com.sky.note_a_lot.firebase.CreateAccountActivity">
+
+    <ScrollView
+        android:id="@+id/loginScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/_10sdp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/loginHideKeyboard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:animateLayoutChanges="true">
+
+
+            <ImageView
+                android:id="@+id/imageLoginBackButton"
+                android:layout_width="@dimen/_24sdp"
+                android:layout_height="@dimen/_24sdp"
+                android:layout_marginStart="@dimen/_8sdp"
+                android:layout_marginTop="@dimen/_16sdp"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/ic_arrow_back"
+                android:background="@drawable/background_default_ripple"
+                app:tint="@color/colorWhite"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/hello_text"
+                android:orientation="vertical"
+                android:layout_marginTop="@dimen/_88sdp"
+                android:layout_marginHorizontal="@dimen/_24sdp"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/hello"
+                    android:textSize="@dimen/_24ssp"
+                    android:fontFamily="@font/ubuntu_bold"
+                    android:textColor="@color/colorWhite"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/welcome_back"
+                    android:textSize="@dimen/_24ssp"
+                    android:fontFamily="@font/ubuntu_bold"
+                    android:textColor="@color/colorWhite"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/formLayout"
+                android:layout_marginVertical="@dimen/_26sdp"
+                android:layout_marginHorizontal="@dimen/_24sdp"
+                android:orientation="vertical"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/hello_text">
+
+                <LinearLayout
+                    android:id="@+id/loginLayoutContinueWithGoogle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/background_google_button"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="@dimen/_10sdp"
+                    android:paddingEnd="@dimen/_10sdp"
+                    android:paddingVertical="@dimen/_3sdp"
+                    android:layout_marginTop="@dimen/_12sdp"
+                    >
+
+                    <ImageView
+                        android:layout_width="@dimen/_40sdp"
+                        android:layout_height="@dimen/_40sdp"
+                        android:src="@drawable/ic_dark_google"
+                        android:contentDescription="@string/app_name"
+                        android:layout_gravity="start"
+                        />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:text="@string/continue_with_google"
+                        android:includeFontPadding="false"
+                        android:fontFamily="@font/ubuntu_regular"
+                        android:textSize="@dimen/_14ssp"
+                        android:textColor="@color/colorWhite"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:layout_marginEnd="@dimen/_6sdp"
+                        />
+
+
+                </LinearLayout>
+
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="@dimen/_18sdp">
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/_1sdp"
+                        android:layout_weight="0.5"
+                        android:background="@color/black"/>
+
+                    <TextView
+                        android:id="@+id/loginOrButtonFun"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:includeFontPadding="false"
+                        android:layout_marginStart="@dimen/_8sdp"
+                        android:layout_marginEnd="@dimen/_8sdp"
+                        android:fontFamily="@font/ubuntu_regular"
+                        android:textSize="@dimen/_13ssp"
+                        android:textAllCaps="true"
+                        android:text="@string/or"
+                        android:textColor="@color/colorWhite"/>
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="@dimen/_1sdp"
+                        android:layout_weight="0.5"
+                        android:background="@color/black"/>
+                </LinearLayout>
+
+
+                <EditText
+                    android:id="@+id/inputLoginEmailId"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textEmailAddress"
+                    android:hint="@string/email_id"
+                    android:fontFamily="@font/ubuntu_regular"
+                    android:imeOptions="actionDone"
+                    android:importantForAutofill="no"
+                    android:includeFontPadding="false"
+                    android:textSize="@dimen/_16ssp"
+                    android:background="@drawable/background_search"
+                    android:textColorHint="@color/colorTextHint"
+                    android:textColor="@color/colorWhite"
+                    android:padding="@dimen/_14sdp"
+                    android:layout_marginTop="@dimen/_18sdp"
+                    />
+                <EditText
+                    android:id="@+id/inputLoginPassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPassword"
+                    android:hint="@string/password"
+                    android:fontFamily="@font/ubuntu_regular"
+                    android:imeOptions="actionDone"
+                    android:importantForAutofill="no"
+                    android:includeFontPadding="false"
+                    android:textSize="@dimen/_16ssp"
+                    android:background="@drawable/background_search"
+                    android:textColor="@color/colorWhite"
+                    android:textColorHint="@color/colorTextHint"
+                    android:padding="@dimen/_14sdp"
+                    android:layout_marginTop="@dimen/_14sdp"
+                    />
+
+                <com.example.myloadingbutton.MyLoadingButton
+                    android:id="@+id/loginLoadingButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:mlb_labelSize="@dimen/_5ssp"
+                    android:layout_marginTop="@dimen/_14sdp"
+                    app:mlb_label="LOGIN"
+                    app:mlb_backgroundColor="@color/colorAccent"
+                    app:mlb_labelColor="@color/colorPrimary"
+                    app:mlb_setNormalAfterError="false"
+                    app:mlb_animationDuration="300"
+                    android:background="@drawable/background_login"
+                    app:mlb_setErrorIcon="@drawable/ic_round_close"
+                    app:mlb_setDoneIcon="@drawable/ic_round_done"
+                    />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginVertical="@dimen/_26sdp"
+                android:gravity="center"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/formLayout">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/don_t_have_an_account"
+                    android:fontFamily="@font/ubuntu_medium"
+                    android:textColor="#121212"
+                    android:textSize="@dimen/_13ssp"/>
+                <TextView
+                    android:id="@+id/createTvButton"
+                    android:paddingStart="@dimen/_3sdp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/ubuntu_bold"
+                    android:textSize="@dimen/_14ssp"
+                    android:textColor="@color/blacky"
+                    android:text="@string/create_account"
+                    tools:ignore="RtlSymmetry"/>
+
+            </LinearLayout>
+
+
+
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

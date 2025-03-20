@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="none">
+
+        <item
+            android:id="@+id/menu_signIn_logIn"
+            android:title="@string/sign_in_log_in"
+            android:icon="@drawable/ic_round_login"
+            android:orderInCategory="100" />
+
+        <item
+            android:id="@+id/menu_sync"
+            android:title="@string/sync"
+            android:icon="@drawable/ic_round_sync"
+            android:orderInCategory="200"/>
+
+        <item
+            android:id="@+id/menu_app_theme"
+            android:icon="@drawable/ic_brush"
+            android:orderInCategory="300"
+            android:title="@string/app_theme" />
+
+        <item
+            android:id="@+id/menu_website"
+            android:title="@string/my_website"
+            android:icon="@drawable/favicon"
+            android:orderInCategory="400"/>
+
+    </group>
+
+</menu>
+

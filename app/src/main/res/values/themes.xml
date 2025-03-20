@@ -1,0 +1,58 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.NoteaLot" parent="Theme.MaterialComponents.DayNight.NoActionBar.Bridge">
+        <!-- Customize your light theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+
+        <item name="actionModeBackground">@color/colorIcons</item>
+        <item name="actionModeCloseDrawable">@drawable/ic_back</item>
+        <item name="windowActionBarOverlay">true</item>
+        <item name="windowActionModeOverlay">true</item>
+        <item name="android:windowActionBarOverlay">true</item>
+        <item name="android:windowActionModeOverlay">true</item>
+
+        <item name="android:windowBackground">@color/colorPrimary</item>
+        <item name="android:windowContentTransitions">true</item>
+        <item name="android:windowDisablePreview">true</item>
+        <item name="android:windowAllowEnterTransitionOverlap">true</item>
+        <item name="android:windowAllowReturnTransitionOverlap">true</item>
+
+
+        <item name="android:statusBarColor">@color/colorPrimary</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <item name="android:navigationBarColor">@color/colorPrimary</item>
+        <!--<item name="android:windowTranslucentNavigation">true</item>
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:fitsSystemWindows">true</item>-->
+
+
+    </style>
+
+    <style name="Theme.NoteaLot" parent="Base.Theme.NoteaLot" />
+
+    <style name="Theme.CreateNoteActivity" parent="Base.Theme.NoteaLot" >
+        <item name="android:navigationBarColor">@color/colorMiscellaneousBackground</item>
+    </style>
+
+    <style name="Theme.MainActivity" parent="Base.Theme.NoteaLot" >
+        <item name="android:navigationBarColor">@color/colorQuickActionsBackground</item>
+    </style>
+
+    <style name="NavigationTheme" parent="Theme.MaterialComponents.Light.NoActionBar.Bridge">
+        <item name="colorPrimary">@color/colorAccent</item>
+        <item name="colorControlHighlight">@color/colorAccent</item>
+    </style>
+
+    <style name="NavigationMenuTextStyle" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">@dimen/_13ssp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:fontFamily">@font/ubuntu_regular</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+
+
+</resources>

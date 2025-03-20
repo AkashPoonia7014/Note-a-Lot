@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/imageAddNote"
+        android:icon="@drawable/ic_add_outline"
+        app:iconTint ="@color/colorIcons"
+        android:title="@string/note"
+        app:showAsAction="always"
+        tools:ignore="AlwaysShowAction" />
+
+    <item
+        android:id="@+id/imageAddImage"
+        android:icon="@drawable/ic_image"
+        app:iconTint ="@color/colorIcons"
+        android:title="@string/image"
+        app:showAsAction="always"
+         />
+
+
+
+    <item
+        android:id="@+id/imageAddWebLink"
+        android:icon="@drawable/ic_web_link"
+        app:iconTint ="@color/colorIcons"
+        android:title="@string/web_link"
+        app:showAsAction="always"
+         />
+
+<!--    <item-->
+<!--        android:id="@+id/imageSettings"-->
+<!--        android:icon="@drawable/ic_brush"-->
+<!--        android:title="@string/change_theme"-->
+<!--        app:showAsAction="always"-->
+<!--       />-->
+
+<!--    <item-->
+<!--        android:id="@+id/changeThemeSwitch"-->
+<!--        android:title=""-->
+<!--        app:showAsAction="always"-->
+<!--        android:actionLayout="@layout/menu_item_theme_switch" />-->
+
+</menu>
