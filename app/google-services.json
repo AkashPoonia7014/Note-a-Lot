@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "683935305735",
+    "project_id": "note-a-lot-7492c",
+    "storage_bucket": "note-a-lot-7492c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:683935305735:android:52b3938b242ce721131aa2",
+        "android_client_info": {
+          "package_name": "com.sky.note_a_lot"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC66xhLpGhJoyAeOmWvDD5xFSRC0CaPlf0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
