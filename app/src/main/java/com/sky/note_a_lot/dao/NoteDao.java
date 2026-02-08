@@ -13,8 +13,9 @@ import java.util.List;
 @Dao
 public interface NoteDao {
 
-    @Insert
-    long[] insertNotes(Note... notes);
+    // Insert multiple notes
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    void insertNotes(List<Note> notes);
 
     @Query("SELECT * FROM notes ORDER BY id DESC")
     List <Note> getAllNotes();
@@ -25,4 +26,7 @@ public interface NoteDao {
 
     @Delete
     void deleteNote(Note note);
+
+    @Delete
+    void deleteNotes(List<Note> notes);
 }

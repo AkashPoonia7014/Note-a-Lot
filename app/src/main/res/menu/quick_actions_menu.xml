@@ -3,13 +3,26 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+
+    <item
+        android:id="@+id/imageCancelSelection"
+        android:icon="@drawable/ic_arrow_back"
+        app:iconTint ="@color/colorIcons"
+        android:title="@string/back"
+        app:showAsAction="always"
+        tools:ignore="AlwaysShowAction"
+        android:visible="false"/>
+
     <item
         android:id="@+id/imageAddNote"
         android:icon="@drawable/ic_add_outline"
         app:iconTint ="@color/colorIcons"
         android:title="@string/note"
         app:showAsAction="always"
-        tools:ignore="AlwaysShowAction" />
+        tools:ignore="AlwaysShowAction"
+        android:visible="true"/>
+
+
 
     <item
         android:id="@+id/imageAddImage"
@@ -17,6 +30,7 @@
         app:iconTint ="@color/colorIcons"
         android:title="@string/image"
         app:showAsAction="always"
+        android:visible="true"
          />
 
 
@@ -27,6 +41,16 @@
         app:iconTint ="@color/colorIcons"
         android:title="@string/web_link"
         app:showAsAction="always"
+        android:visible="true"
+         />
+
+    <item
+        android:id="@+id/imageAppBarDelete"
+        android:icon="@drawable/ic_delete"
+        app:iconTint ="@color/colorIcons"
+        android:title="@string/delete"
+        app:showAsAction="always"
+        android:visible="false"
          />
 
 <!--    <item-->

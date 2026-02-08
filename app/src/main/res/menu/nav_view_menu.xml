@@ -17,16 +17,30 @@
             android:orderInCategory="200"/>
 
         <item
+            android:id="@+id/menu_fetch"
+            android:title="@string/fetch_data"
+            android:icon="@drawable/ic_cloud_download_24"
+            android:orderInCategory="300"/>
+
+        <item
+            android:id="@+id/menu_delete"
+            android:title="@string/erase_cloud_data"
+            android:icon="@drawable/ic_delete"
+            android:iconTint="@color/colorAccent"
+            android:orderInCategory="400"
+            tools:targetApi="o" />
+
+        <item
             android:id="@+id/menu_app_theme"
             android:icon="@drawable/ic_brush"
-            android:orderInCategory="300"
+            android:orderInCategory="500"
             android:title="@string/app_theme" />
 
         <item
             android:id="@+id/menu_website"
             android:title="@string/my_website"
             android:icon="@drawable/favicon"
-            android:orderInCategory="400"/>
+            android:orderInCategory="600"/>
 
     </group>
 

@@ -19,6 +19,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
@@ -28,6 +29,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.InputType;
+import android.text.Layout;
 import android.text.TextWatcher;
 import android.util.Patterns;
 import android.view.Gravity;
@@ -71,7 +73,7 @@ public class CreateNoteActivity extends AppCompatActivity {
     private View viewSubtitleIndicator;
     private String selectedNoteColor;
     private String selectedImagePath;
-    private ImageView imageBack , imageSave;
+    private ImageView imageBack, imageSave;
     private ImageView imageNote;
     private ImageView imageColor1, imageColor2, imageColor3, imageColor4, imageColor5;
     private TextView textWebURL;
@@ -87,13 +89,16 @@ public class CreateNoteActivity extends AppCompatActivity {
     String colorString;
     Boolean returnBack = false;
     Boolean backButton = false;
-
+    private LinearLayout layoutMiscellaneous;
+    private BottomSheetBehavior<LinearLayout> bottomSheetBehavior;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_note);
+
+        inputNoteText = findViewById(R.id.inputNote);
 
         initViews();
         setActionOnViews();
@@ -144,15 +149,41 @@ public class CreateNoteActivity extends AppCompatActivity {
             }
         }
         initMiscellaneous();
+        inputNoteText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
+                    bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                // Scroll to bottom after text changes
+//                scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
+
+                scrollToCursor();
+            }
+
+
+        });
+
+        inputNoteText.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                scrollToCursor();
+            }
+        });
         setSubtitleIndicatorColor();
     }
 
-    private void initViews(){
+    private void initViews() {
         imageBack = findViewById(R.id.imageBack);
         imageSave = findViewById(R.id.imageSave);
-
         inputNoteTitle = findViewById(R.id.inputNoteTitle);
-        inputNoteText = findViewById(R.id.inputNote);
         textDateTime = findViewById(R.id.textDateTime);
         viewSubtitleIndicator = findViewById(R.id.viewSubtitleIndicator);
         imageNote = findViewById(R.id.imageNote);
@@ -183,19 +214,23 @@ public class CreateNoteActivity extends AppCompatActivity {
             }
         });
 
-        inputNoteText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                // Scroll to bottom after text changes
-                scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
-            }
-        });
+//        inputNoteText.addTextChangedListener(new TextWatcher() {
+//            @Override
+//            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+//
+//            @Override
+//            public void onTextChanged(CharSequence s, int start, int before, int count) {
+//                if (bottomSheetBehavior.getState()== BottomSheetBehavior.STATE_EXPANDED) {
+//                    bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+//                }
+//            }
+//
+//            @Override
+//            public void afterTextChanged(Editable s) {
+//                // Scroll to bottom after text changes
+//                scrollView.post(() -> scrollView.fullScroll(ScrollView.FOCUS_DOWN));
+//            }
+//        });
 
         imageSave.setOnClickListener(v -> {
             saveNote(true);
@@ -203,7 +238,7 @@ public class CreateNoteActivity extends AppCompatActivity {
         });
     }
 
-    private void setViewOrUpdateNote() {
+    private void   setViewOrUpdateNote() {
 
 //        String titleText = alreadyAvialableNote.getTitle();
 //        if (titleText.length() <= 120 ) {
@@ -290,7 +325,7 @@ public class CreateNoteActivity extends AppCompatActivity {
         UIUtil.hideKeyboard(CreateNoteActivity.this);
 
         final Note note = new Note();
-        if(showToast) {
+        if (showToast) {
             if (inputNoteTitle.getText().toString().trim().isEmpty() && inputNoteText.getText().toString().trim().isEmpty()) {
                 showCustomToast("Note can't be empty!", Toast.LENGTH_SHORT);
                 return;
@@ -410,11 +445,12 @@ public class CreateNoteActivity extends AppCompatActivity {
 
     private void initMiscellaneous() {
 
-        final LinearLayout layoutMiscellaneous = findViewById(R.id.layoutMiscellaneous);
-        final BottomSheetBehavior<LinearLayout> bottomSheetBehavior = BottomSheetBehavior.from(layoutMiscellaneous);
+        layoutMiscellaneous = findViewById(R.id.layoutMiscellaneous);
+        bottomSheetBehavior = BottomSheetBehavior.from(layoutMiscellaneous);
+
         layoutMiscellaneous.findViewById(R.id.textMiscellaneous).setOnClickListener(v -> {
-            
-            if (bottomSheetBehavior.getState()!= BottomSheetBehavior.STATE_EXPANDED) {
+
+            if (bottomSheetBehavior.getState() != BottomSheetBehavior.STATE_EXPANDED) {
                 bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
             } else {
                 bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
@@ -432,23 +468,23 @@ public class CreateNoteActivity extends AppCompatActivity {
         }
 
         layoutMiscellaneous.findViewById(R.id.viewColor1).setOnClickListener(
-                v -> changeSelectedColor(colorString,R.drawable.ic_done,0,0,0,0));
+                v -> changeSelectedColor(colorString, R.drawable.ic_done, 0, 0, 0, 0));
 
         layoutMiscellaneous.findViewById(R.id.viewColor2).setOnClickListener
-                (v -> changeSelectedColor("#FDBE3B",0,R.drawable.ic_done,0,0,0));
+                (v -> changeSelectedColor("#FDBE3B", 0, R.drawable.ic_done, 0, 0, 0));
 
         layoutMiscellaneous.findViewById(R.id.viewColor3).setOnClickListener(
-                v -> changeSelectedColor("#FF4842",0,0,R.drawable.ic_done,0,0));
+                v -> changeSelectedColor("#FF4842", 0, 0, R.drawable.ic_done, 0, 0));
 
         layoutMiscellaneous.findViewById(R.id.viewColor4).setOnClickListener(
-                v -> changeSelectedColor("#3A52Fc",0,0,0,R.drawable.ic_done,0));
+                v -> changeSelectedColor("#3A52Fc", 0, 0, 0, R.drawable.ic_done, 0));
 
         layoutMiscellaneous.findViewById(R.id.viewColor5).setOnClickListener(
-                v -> changeSelectedColor("#000000",0,0,0,0,R.drawable.ic_done));
+                v -> changeSelectedColor("#000000", 0, 0, 0, 0, R.drawable.ic_done));
 
         if (alreadyAvialableNote != null && alreadyAvialableNote.getColor() != null && !alreadyAvialableNote.getColor().trim().isEmpty()) {
             switch (alreadyAvialableNote.getColor()) {
-                case "#FDBE3B" :
+                case "#FDBE3B":
                     layoutMiscellaneous.findViewById(R.id.viewColor2).performClick();
                     break;
                 case "#FF4842":
@@ -548,7 +584,7 @@ public class CreateNoteActivity extends AppCompatActivity {
         gradientDrawable.setColor(Color.parseColor(selectedNoteColor));
     }
 
-    private void changeSelectedColor(String noteColor,int id1,int id2,int id3,int id4,int id5) {
+    private void changeSelectedColor(String noteColor, int id1, int id2, int id3, int id4, int id5) {
         selectedNoteColor = noteColor;
         imageColor1.setImageResource(id1);
         imageColor2.setImageResource(id2);
@@ -561,10 +597,10 @@ public class CreateNoteActivity extends AppCompatActivity {
 //    private void selectImage() {
 //        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
 //        startActivityForResult(intent, REQUEST_CODE_SELECT_IMAGE);
-////        if (intent.resolveActivity(getPackageManager()) != null) {
-////        }
-//    }
 
+    /// /        if (intent.resolveActivity(getPackageManager()) != null) {
+    /// /        }
+//    }
     private void selectImage() {
         ImagePicker.Companion.with(CreateNoteActivity.this)
                 .crop()
@@ -576,7 +612,7 @@ public class CreateNoteActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_CODE_STORAGE_PERMISSION && grantResults.length>0) {
+        if (requestCode == REQUEST_CODE_STORAGE_PERMISSION && grantResults.length > 0) {
 
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 selectImage();
@@ -589,15 +625,14 @@ public class CreateNoteActivity extends AppCompatActivity {
     private void showCustomToast(String message, int toastLength) {
 
         LayoutInflater inflater = getLayoutInflater();
-        View layout = inflater.inflate(R.layout.custom_toast,
-                (ViewGroup) findViewById(R.id.toast_layout_root));
+        View layout = inflater.inflate(R.layout.custom_toast, null);
 
-        TextView text = (TextView) layout.findViewById(R.id.text);
+        TextView text = (TextView) layout.findViewById(R.id.toastText);
 
         text.setText(message);
 
         Toast toast = new Toast(getApplicationContext());
-        toast.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 250);
+        toast.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 200);
         toast.setDuration(toastLength);
         toast.setView(layout);
         toast.show();
@@ -658,7 +693,7 @@ public class CreateNoteActivity extends AppCompatActivity {
             );
             builder.setView(view);
 
-            dialogAddURL =builder.create();
+            dialogAddURL = builder.create();
             if (dialogAddURL.getWindow() != null) {
                 dialogAddURL.getWindow().setBackgroundDrawable(new ColorDrawable(0));
             }
@@ -687,6 +722,33 @@ public class CreateNoteActivity extends AppCompatActivity {
         dialogAddURL.show();
     }
 
+    private void scrollToCursor() {
+        inputNoteText.post(new Runnable() {
+            @Override
+            public void run() {
+
+                int cursorPosition = inputNoteText.getSelectionStart();
+                Layout layout = inputNoteText.getLayout();
+
+                if (layout != null) {
+
+                    int line = layout.getLineForOffset(cursorPosition);
+                    int lineTop = layout.getLineTop(line);
+                    int lineBottom = layout.getLineBottom(line);
+
+                    // Create rectangle around cursor line
+                    Rect rect = new Rect();
+                    rect.left = 0;
+                    rect.top = lineTop;
+                    rect.right = inputNoteText.getWidth();
+                    rect.bottom = lineBottom;
+
+                    // Request ScrollView to make this rectangle visible
+                    inputNoteText.requestRectangleOnScreen(rect, true);
+                }
+            }
+        });
+    }
 
     @Override
     public void onBackPressed() {
@@ -701,6 +763,7 @@ public class CreateNoteActivity extends AppCompatActivity {
             }
         }
     }
+
     @Override
     public void finish() {
         super.finish();

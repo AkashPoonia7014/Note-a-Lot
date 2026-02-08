@@ -28,7 +28,8 @@
     <string name="already_have_an_account">Already have an account?</string>
     <string name="continue_with_google">Continue with Google</string>
     <string name="or">or</string>
-    <string name="web_client_id">683935305735-uq1q294o88c57c90qcnqdndb48nrctdc.apps.googleusercontent.com</string>
+<!--    <string name="web_client_id">683935305735-uq1q294o88c57c90qcnqdndb48nrctdc.apps.googleusercontent.com</string>-->
+    <string name="web_client_id">683935305735-f2i2io2oroqrhipcm1phs8obfcsmvnvd.apps.googleusercontent.com</string>
     <string name="sign_in_log_in">Sign in/Log in</string>
     <string name="sync">Sync</string>
     <string name="app_theme">App Theme</string>
@@ -46,7 +47,16 @@
     <string name="switch_theme">Switch Theme</string>
     <string name="because_who_needs_memory_anyway">Because who needs memory anyway</string>
     <string name="authenticating">Signing In....</string>
+    <string name="fetch_data">Fetch Data</string>
+    <string name="sync_data">Sync Data</string>
+    <string name="warning_this_will_erase_your_cloud_data_and_replace_it_with_local_data_continue">Warning: This will erase your cloud data and replace it with local data. Continue?</string>
+    <string name="erase_cloud_data">Erase cloud data</string>
 
+    <string name="supabase_publishable_api_key">sb_publishable_yDScMeSvhkUSpK98etC31A_mmiU5xp9</string>
+    <string name="supabase_project_url">https://rwgxjxvdwfhnyhvnyezw.supabase.co</string>
+    <string name="supabase_bucket_name">notesImages</string>
+    <string name="delete">Delete</string>
+    <string name="back">Back</string>
 
 
     <string-array name="dummy_note_titles">

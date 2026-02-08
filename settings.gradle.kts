@@ -1,4 +1,3 @@
-include(":app", ":expandingprogressbar")
 pluginManagement {
     repositories {
         google()

@@ -24,6 +24,9 @@ public class Note implements Serializable {
     @ColumnInfo(name = "web_link")
     private String webLink;
 
+    public Note() {
+    }
+
     public int getId() {
         return id;
     }

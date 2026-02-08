@@ -1,76 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/containerToastBg"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/background_toast"
+    android:paddingHorizontal="@dimen/_17sdp"
+    android:paddingVertical="@dimen/_13sdp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:theme="@style/CustomToastTheme">
+
+    <ImageView
+        android:layout_width="@dimen/_22sdp"
+        android:layout_height="@dimen/_22sdp"
+        android:src="@mipmap/ic_launcher"
+        android:contentDescription="@null"
+        android:layout_marginEnd="@dimen/_8sdp"/>
+
+    <TextView
+        android:id="@+id/toastText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/colorWhite"
+        android:textSize="@dimen/_12ssp"/>
+</LinearLayout>
+
+
+
+
+
+
+
+<!--     This is the one i had used until i created one in which you can show app
+            icon in the Toast and one which behaves according to app theme-->
+
 <!--<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
 <!--    android:id="@+id/toast_layout_root"-->
 <!--    android:orientation="horizontal"-->
-<!--    android:layout_width="match_parent"-->
-<!--    android:layout_height="match_parent"-->
+<!--    android:layout_width="fill_parent"-->
+<!--    android:layout_height="wrap_content"-->
 <!--    android:background="@drawable/background_dialog"-->
-<!--    >-->
+<!--    android:layout_gravity="center">-->
 
+<!--    <View-->
+<!--        android:layout_width="@dimen/_16sdp"-->
+<!--        android:layout_height="fill_parent" />-->
 
-<!--    <TextView android:id="@+id/text"-->
-<!--        android:layout_width="wrap_content"-->
+<!--    <LinearLayout-->
+<!--        android:id="@+id/toast_root"-->
+<!--        android:orientation="vertical"-->
+<!--        android:layout_width="0dp"-->
 <!--        android:layout_height="wrap_content"-->
-<!--        android:textColor="@color/colorAccent"-->
-<!--        android:fontFamily="@font/ubuntu_regular"-->
-<!--        android:includeFontPadding="true"-->
-<!--        android:textSize="@dimen/_13ssp"-->
+<!--        android:background="@color/colorDefaultNoteColor"-->
+<!--        android:layout_gravity="center"-->
+<!--        android:layout_weight="1">-->
+
+<!--        <View-->
+<!--            android:layout_width="fill_parent"-->
+<!--            android:layout_height="@dimen/_14sdp" />-->
+
+<!--        <TextView-->
+<!--            android:id="@+id/text"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="0dp"-->
+<!--            android:textColor="@color/colorAccent"-->
+<!--            android:layout_weight="1"-->
+<!--            android:textSize="@dimen/_14ssp"-->
+<!--            android:gravity="center"-->
+<!--            />-->
+<!--        <View-->
+<!--            android:layout_width="fill_parent"-->
+<!--            android:layout_height="@dimen/_14sdp" />-->
+
+<!--    </LinearLayout>-->
+
+
+<!--    <View-->
+<!--        android:layout_width="@dimen/_16sdp"-->
+<!--        android:layout_height="fill_parent"-->
 <!--        />-->
 
 <!--</LinearLayout>-->
-
-
-
-
-
-
-
-
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/toast_layout_root"
-    android:orientation="horizontal"
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:background="@drawable/background_dialog"
-    android:layout_gravity="center">
-
-    <View
-        android:layout_width="@dimen/_9sdp"
-        android:layout_height="fill_parent" />
-
-    <LinearLayout
-        android:id="@+id/toast_root"
-        android:orientation="vertical"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:background="@color/colorDefaultNoteColor"
-        android:layout_gravity="center"
-        android:layout_weight="1">
-
-        <View
-            android:layout_width="fill_parent"
-            android:layout_height="@dimen/_7sdp" />
-
-        <TextView
-            android:id="@+id/text"
-            android:layout_width="wrap_content"
-            android:layout_height="0dp"
-            android:textColor="@color/colorAccent"
-            android:layout_weight="1"
-            android:gravity="center"
-            />
-        <View
-            android:layout_width="fill_parent"
-            android:layout_height="@dimen/_7sdp" />
-
-    </LinearLayout>
-
-
-    <View
-        android:layout_width="@dimen/_9sdp"
-        android:layout_height="fill_parent"
-        />
-
-</LinearLayout>
 
 
 

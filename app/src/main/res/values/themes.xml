@@ -53,6 +53,12 @@
         <item name="android:includeFontPadding">false</item>
     </style>
 
+    <style name="CustomToastTheme" parent="">
+        <item name="android:textColor">@color/colorWhite</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:background">@color/black</item>
+    </style>
+
 
 
 </resources>

@@ -14,6 +14,8 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.Gravity;
@@ -60,6 +62,7 @@ public class LoginActivity extends AppCompatActivity implements MyLoadingButton.
     GoogleSignInClient googleSignInClient;
     Dialog dialog;
     public static final String NEW_EXTRA_MESSAGE = "com.sky.LOGIN";
+    public static final String ID_TOKEN_SUPABASE = "com.sky.LOGIN.ID_TOKEN";
     public static final String EMAIL_LOGIN_MESSAGE = "com.sky.EMAIL_LOGIN";
 
     private static FinishAnyActivityCallback finishAnyActivityCallback, finishMainActivityCallback;
@@ -79,6 +82,7 @@ public class LoginActivity extends AppCompatActivity implements MyLoadingButton.
         initView();
         setActionOnViews();
         showProgressDialog();
+        findViewById(R.id.loginOrButtonFun).setOnClickListener(v -> showCustomToast("Or sab ghara hi", Toast.LENGTH_SHORT));
     }
     private void initView() {
         inputLoginEmailId = findViewById(R.id.inputLoginEmailId);
@@ -107,7 +111,7 @@ public class LoginActivity extends AppCompatActivity implements MyLoadingButton.
                 .setButtonLabelColor(R.color.colorPrimary)
                 .setProgressDoneIcon(getResources().getDrawable(R.drawable.ic_round_done))
                 .setProgressErrorIcon(getResources().getDrawable(R.drawable.ic_round_close))
-                .setNormalAfterError(false);
+                .setNormalAfterError(true);
 
         GoogleSignInOptions options = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.web_client_id))
@@ -132,6 +136,23 @@ public class LoginActivity extends AppCompatActivity implements MyLoadingButton.
         });
 
         findViewById(R.id.loginHideKeyboard).setOnClickListener(view -> UIUtil.hideKeyboard(LoginActivity.this));
+
+        inputLoginEmailId.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                loginLoadingButton.showNormalButton();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
     }
 
     private final ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
@@ -149,14 +170,14 @@ public class LoginActivity extends AppCompatActivity implements MyLoadingButton.
                             auth.signInWithCredential(authCredential).addOnCompleteListener(task -> {
                                 dialog.dismiss();
                                 if (task.isSuccessful()) {
-                                    if (finishAnyActivityCallback != null ) {
-                                        finishAnyActivityCallback.finishAnyActivity();
-                                        Log.d("Login", "Create Activity finished");
-                                    }
-                                    if (finishMainActivityCallback !=null) {
-                                        finishMainActivityCallback.finishAnyActivity();
-                                        Log.d("Login", "Main Activity finished");
-                                    }
+//                                    if (finishAnyActivityCallback != null ) {
+//                                        finishAnyActivityCallback.finishAnyActivity();
+//                                        Log.d("Login", "Create Activity finished");
+//                                    }
+//                                    if (finishMainActivityCallback !=null) {
+//                                        finishMainActivityCallback.finishAnyActivity();
+//                                        Log.d("Login", "Main Activity finished");
+//                                    }
                                     dialog.dismiss();
                                     showCustomToast("Firebase authentication successful", Toast.LENGTH_SHORT);
                                     startActivity(
@@ -194,15 +215,14 @@ public class LoginActivity extends AppCompatActivity implements MyLoadingButton.
     private void showCustomToast(String message, int toastLength) {
 
         LayoutInflater inflater = getLayoutInflater();
-        View layout = inflater.inflate(R.layout.custom_toast,
-                (ViewGroup) findViewById(R.id.toast_layout_root));
+        View layout = inflater.inflate(R.layout.custom_toast, null);
 
-        TextView text = (TextView) layout.findViewById(R.id.text);
+        TextView text = (TextView) layout.findViewById(R.id.toastText);
 
         text.setText(message);
 
         Toast toast = new Toast(getApplicationContext());
-        toast.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 250);
+        toast.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 200);
         toast.setDuration(toastLength);
         toast.setView(layout);
         toast.show();

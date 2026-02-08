@@ -83,6 +83,7 @@ public class CreateAccountActivity extends AppCompatActivity implements MyLoadin
         initViews();
         setActionOnViews();
         showProgressDialog();
+        findViewById(R.id.orButtonFun).setOnClickListener(v -> showCustomToast("Or sab badiya, tu bata", Toast.LENGTH_SHORT));
     }
 
     private void initViews() {
@@ -121,7 +122,7 @@ public class CreateAccountActivity extends AppCompatActivity implements MyLoadin
                 .setButtonLabelColor(R.color.colorPrimary)
                 .setProgressDoneIcon(getResources().getDrawable(R.drawable.ic_round_done))
                 .setProgressErrorIcon(getResources().getDrawable(R.drawable.ic_round_close))
-                .setNormalAfterError(false);
+                .setNormalAfterError(true);
 
         loginTvButton.setOnClickListener(v->{
             UIUtil.hideKeyboard(CreateAccountActivity.this);
@@ -142,6 +143,8 @@ public class CreateAccountActivity extends AppCompatActivity implements MyLoadin
             activityResultLauncher.launch(intent);
         });
         findViewById(R.id.hideKeyboard).setOnClickListener(view -> UIUtil.hideKeyboard(CreateAccountActivity.this));
+
+
     }
 
     private final ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
@@ -185,7 +188,7 @@ public class CreateAccountActivity extends AppCompatActivity implements MyLoadin
                             showCustomToast("Google Sign-in Failed"+Objects.requireNonNull(e.getMessage()), Toast.LENGTH_LONG);
                         }
                     } else {
-                        showCustomToast("Some error occurred", Toast.LENGTH_LONG);
+                        showCustomToast("Some error occurred"+ result.getResultCode(), Toast.LENGTH_LONG);
                         dialog.dismiss(); // Hide loading dialog if the result code is not OK
                     }
                 }
@@ -194,13 +197,14 @@ public class CreateAccountActivity extends AppCompatActivity implements MyLoadin
     private void showCustomToast(String message, int toastLength) {
 
         LayoutInflater inflater = getLayoutInflater();
-        View layout = inflater.inflate(R.layout.custom_toast,
-                (ViewGroup) findViewById(R.id.toast_layout_root));
+        View layout = inflater.inflate(R.layout.custom_toast, null);
 
-        TextView text = (TextView) layout.findViewById(R.id.text);
-         text.setText(message);
+        TextView text = (TextView) layout.findViewById(R.id.toastText);
+
+        text.setText(message);
+
         Toast toast = new Toast(getApplicationContext());
-        toast.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 250);
+        toast.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 200);
         toast.setDuration(toastLength);
         toast.setView(layout);
         toast.show();

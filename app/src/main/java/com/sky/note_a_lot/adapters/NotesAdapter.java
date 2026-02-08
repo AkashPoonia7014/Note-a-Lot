@@ -19,6 +19,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import android.widget.TextView;
@@ -29,8 +31,10 @@ import com.sky.note_a_lot.listeners.NotesListener;
 import com.makeramen.roundedimageview.RoundedImageView;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import androidx.core.content.ContextCompat;
@@ -41,6 +45,7 @@ public class  NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHol
     private NotesListener notesListener;
     private Timer timer;
     private List<Note> notesSource;
+    private final Set<Integer> selectedIds = new HashSet<>();
     private Context context;
 
     public NotesAdapter(Context context, List<Note> notes, NotesListener notesListener) {
@@ -66,12 +71,20 @@ public class  NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHol
     @Override
     public void onBindViewHolder(@NonNull NoteViewHolder holder, @SuppressLint("RecyclerView") final int position) {
 
-        holder.setNote(notes.get(position), context);
-        holder.layoutNote.setOnClickListener(v -> notesListener.onNoteClicked(holder.layoutNote, notes.get(position), position));
-        /*holder.layoutNote.setOnLongClickListener(v -> {
-            notesListener.onNoteLongClicked(holder.layoutNote, notes.get(position), position);
+        Note currentNote = notes.get(position);
+        holder.setNote(currentNote, context);
+
+        // The Long Press Tick visibility
+        boolean isSelected = selectedIds.contains(currentNote.getId());
+        holder.checkIcon.setVisibility(isSelected ? View.VISIBLE : View.GONE);
+
+        holder.layoutNote.setOnClickListener(v ->
+                notesListener. onNoteClicked(holder.layoutNote, currentNote, position)
+        );
+        holder.layoutNote.setOnLongClickListener(v -> {
+            notesListener.onNoteLongClicked(currentNote);
             return true;
-        });*/
+        });
 
         int myColor1 = ContextCompat.getColor(holder.itemView.getContext(), R.color.colorDefaultNoteColor);
         String colorString1 = String.format("#%06X", (0xFFFFFF & myColor1));
@@ -126,7 +139,8 @@ public class  NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHol
 
     static class NoteViewHolder extends RecyclerView.ViewHolder {
         TextView textTitle, textText, textDateTime;
-        LinearLayout layoutNote;
+        ImageView checkIcon;
+        FrameLayout layoutNote;
         RoundedImageView imageNote;
         int myColor;
         NoteViewHolder(@NonNull View itemView) {
@@ -136,6 +150,7 @@ public class  NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHol
             textDateTime= itemView.findViewById(R.id.textDateTime);
             layoutNote = itemView.findViewById(R.id.layoutNote);
             imageNote = itemView.findViewById(R.id.imageNote);
+            checkIcon = itemView.findViewById(R.id.checkIcon);
 
         }
 
@@ -227,5 +242,38 @@ public class  NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHol
         if (timer != null) {
             timer.cancel();
         }
+    }
+
+    public void toggleSelection(int noteId) {
+        if (selectedIds.contains(noteId)) {
+            selectedIds.remove(noteId);
+        } else {
+            selectedIds.add(noteId);
+        }
+        notifyDataSetChanged();
+    }
+
+    public void clearSelection() {
+        selectedIds.clear();
+        notifyDataSetChanged();
+    }
+
+    public int getSelectedCount() {
+        return selectedIds.size();
+    }
+
+    public List<Note> getSelectedNotes() {
+        List<Note> list = new ArrayList<>();
+        for (Note note : notes) {
+            if (selectedIds.contains(note.getId())) {
+                list.add(note);
+            }
+        }
+        return list;
+    }
+
+    public void removeNotes(List<Note> toRemove) {
+        notes.removeAll(toRemove);
+        clearSelection();
     }
 }

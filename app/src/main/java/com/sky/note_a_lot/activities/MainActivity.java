@@ -29,12 +29,16 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 
+import android.util.Log;
 import android.util.Patterns;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -51,9 +55,12 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.material.bottomappbar.BottomAppBar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
-import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.WriteBatch;
 import com.sky.note_a_lot.R;
 import com.sky.note_a_lot.adapters.NotesAdapter;
 import com.sky.note_a_lot.database.NotesDatabase;
@@ -62,14 +69,25 @@ import com.sky.note_a_lot.firebase.CreateAccountActivity;
 import com.sky.note_a_lot.firebase.LoginActivity;
 import com.sky.note_a_lot.listeners.NotesListener;
 import com.sky.note_a_lot.trash.FinishAnyActivityCallback;
+import com.sky.note_a_lot.utils.ImageDownloaderSupabase;
+import com.sky.note_a_lot.utils.SupabaseHelperClassKotlin;
 
 import net.yslibrary.android.keyboardvisibilityevent.KeyboardVisibilityEvent;
 import net.yslibrary.android.keyboardvisibilityevent.util.UIUtil;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import io.github.jan.supabase.storage.Bucket;
 import maes.tech.intentanim.CustomIntent;
 
 public class MainActivity extends AppCompatActivity implements NotesListener, NavigationView.OnNavigationItemSelectedListener, FinishAnyActivityCallback {
@@ -86,13 +104,14 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
     public static final String EXTRA_MESSAGE = "com.sky.ACCOUNT CREATED";
     public static final String NEW_EXTRA_MESSAGE = "com.sky.LOGIN";
     public static final String EMAIL_LOGIN_MESSAGE = "com.sky.EMAIL_LOGIN";
+    public static final String ID_TOKEN_SUPABASE = "com.sky.LOGIN.ID_TOKEN";
     private RecyclerView notesRecyclerView;
     private List<Note> noteList;
     private NotesAdapter notesAdapter;
     private AlertDialog dialogAddURL;
     private int noteClickedPosition = -1;
     private TextView textEmpty;
-    public static final String KEY_FIRST_LAUNCH = "com.example.note_a_lot.first.launch";
+//    public static final String KEY_FIRST_LAUNCH = "com.example.note_a_lot.first.launch";
     private ImageView imageUser, imageEmpty, layoutStyle;
     private FloatingActionButton imageAddNoteMain;
     private BottomAppBar bottomAppBar;
@@ -101,16 +120,18 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
     private ConstraintLayout contentView;
     private NavigationView navigationView;
     private static final float END_SCALE = 0.8f;
-    private int styleNumber, spanCount;
+    private int spanCount;
     private StaggeredGridLayoutManager staggeredGridLayoutManager;
     private AlertDialog dialogChangeTheme;
-    private androidx.appcompat.view.ActionMode actionMode;
-    private View navHeaderView;
+    private AlertDialog dialogSyncData;
+    private AlertDialog dialogEraseData;
+    private AlertDialog dialogDeleteMultipleNotes;
     private ImageView  headerUserImage, headerAppIcon;
     private TextView headerUserName, headerUserEmail;
     private FirebaseAuth auth;
     private GoogleSignInClient googleSignInClient;
-    private String emailPreference;
+    private boolean selectionMode = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -133,7 +154,7 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
         if (getIntent().getExtras() != null) {
             saveEmailLoginPreference(getIntent().getStringExtra(EMAIL_LOGIN_MESSAGE));
         }
-        emailPreference = loadEmailLoginPreference();
+        String emailPreference = loadEmailLoginPreference();
         if (!Objects.equals(emailPreference, "isAEmailLogin")) {
             checkIfUserLoggedIn();
             setupAuthStateListener();
@@ -164,7 +185,7 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
         textEmpty = findViewById(R.id.textEmpty);
         layoutStyle = findViewById(R.id.layoutStyle);
         bottomAppBar = findViewById(R.id.bottomAppBar);
-        navHeaderView = navigationView.getHeaderView(0);
+        View navHeaderView = navigationView.getHeaderView(0);
         headerUserImage = navHeaderView.findViewById(R.id.navViewUserImage);
         headerAppIcon = navHeaderView.findViewById(R.id.navViewAppIcon);
         headerUserName = navHeaderView.findViewById(R.id.navViewUserName);
@@ -172,6 +193,11 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
 
         auth = FirebaseAuth.getInstance();
         googleSignInClient = GoogleSignIn.getClient(MainActivity.this, GoogleSignInOptions.DEFAULT_SIGN_IN);
+
+        if (getFolderNamePreference() == null) {
+            String folderNameForBucket = String.valueOf(UUID.randomUUID());
+            saveFolderNamePreference(folderNameForBucket);
+        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -257,11 +283,69 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
                 }
             } else if (itemId == R.id.imageAddWebLink) {
                 showAddURLDialog();
+            } else if (itemId == R.id.imageCancelSelection) {
+                exitSelectionMode();
+            } else if (itemId == R.id.imageAppBarDelete) {
+                deleteNotesAndShowDialog();
             }
             return false;
         });
 
         findViewById(R.id.textMyNotes).setOnClickListener(view -> UIUtil.hideKeyboard(MainActivity.this));
+    }
+
+    @SuppressLint("SetTextI18n")
+    private void deleteNotesAndShowDialog() {
+        if (dialogDeleteMultipleNotes == null) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            View view = LayoutInflater.from(this).inflate(
+                    R.layout.layout_delete_note,
+                    (ViewGroup) findViewById(R.id.layoutDeleteNoteContainer)
+            );
+            builder.setView(view);
+
+            dialogDeleteMultipleNotes = builder.create();
+            if (dialogDeleteMultipleNotes.getWindow() != null) {
+                dialogDeleteMultipleNotes.getWindow().setBackgroundDrawable(new ColorDrawable(0));
+            }
+            TextView deleteHeader, deleteText, deleteButton;
+            deleteButton = view.findViewById(R.id.textDeleteNote);
+            deleteHeader = view.findViewById(R.id.deleteNoteHeader);
+            deleteText = view.findViewById(R.id.textDeleteNoteMessage);
+
+            deleteButton.setText("Delete Notes");
+            deleteHeader.setText("Delete Multiple Notes");
+            deleteText.setText("Are you sure you want to delete all selected notes");
+
+            deleteButton.setOnClickListener(v -> {
+                dialogDeleteMultipleNotes.dismiss();
+                List<Note> selectedNotes = notesAdapter.getSelectedNotes();
+
+                Executors.newSingleThreadExecutor().execute(() -> {
+
+//                    for(Note thisNote: selectedNotes) {
+//                        NotesDatabase.getDatabase(getApplicationContext()).noteDao().deleteNote(thisNote);
+//                    }
+
+                    NotesDatabase.getDatabase(getApplicationContext()).noteDao().deleteNotes(selectedNotes);
+                    List<Note> currentLeftNotes = NotesDatabase.getDatabase(getApplicationContext()).noteDao().getAllNotes();
+
+                    runOnUiThread(() -> {
+                        notesAdapter.removeNotes(selectedNotes);
+                        if (currentLeftNotes.isEmpty()) {
+                            imageEmpty.setVisibility(View.VISIBLE);
+                            textEmpty.setVisibility(View.VISIBLE);
+                        } else {
+                            imageEmpty.setVisibility(View.GONE);
+                            textEmpty.setVisibility(View.GONE);
+                        }
+                        exitSelectionMode();
+                    });
+                });
+            });
+            view.findViewById(R.id.textCancel).setOnClickListener(v -> dialogDeleteMultipleNotes.dismiss());
+        }
+        dialogDeleteMultipleNotes.show();
     }
 
     private void settingRecyclerView() {
@@ -326,11 +410,38 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
 
             }
 
-        } else if (menuItemId == R.id.menu_sync) {
-            showCustomToast("Saas to len de be", Toast.LENGTH_SHORT);
-            drawerLayout.closeDrawer(GravityCompat.END);
+        }
+        else if (menuItemId == R.id.menu_sync) {
 
-        } else if (menuItemId == R.id.menu_app_theme) {
+            if (auth.getCurrentUser() != null)
+                showSyncDataDialog();
+            else
+                showCustomToast("Sign in to sync your data.", Toast.LENGTH_SHORT);
+
+            drawerLayout.closeDrawer(GravityCompat.END);
+        }
+        else if (menuItemId == R.id.menu_fetch) {
+
+            if (auth.getCurrentUser() != null) {
+                showCustomToast("Fetching data from cloud...", Toast.LENGTH_SHORT);
+                fetchDataFromFirestore();
+            }
+            else
+                showCustomToast("Sign in required to fetch data.", Toast.LENGTH_SHORT);
+
+            drawerLayout.closeDrawer(GravityCompat.END);
+        }
+        else if (menuItemId == R.id.menu_delete) {
+
+            if (auth.getCurrentUser() != null)
+                showEraseDataDialog();
+            else
+                showCustomToast("This action requires you to be signed in.", Toast.LENGTH_SHORT);
+
+            drawerLayout.closeDrawer(GravityCompat.END);
+        }
+
+        else if (menuItemId == R.id.menu_app_theme) {
             UIUtil.hideKeyboard(MainActivity.this);
             showChangeThemeDialog();
             inputSearch.setText(null);
@@ -433,47 +544,6 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
         });
     }
 
-    /*private void defaultFirstNote() {
-
-        SharedPreferences mSharedPref ;
-        mSharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        boolean isFirstLaunch = mSharedPref.getBoolean(KEY_FIRST_LAUNCH, true);
-
-        if (isFirstLaunch) {
-            String[] dummyNoteTitles = getResources().getStringArray(R.array.dummy_note_titles);
-            String[] dummyNoteSub = getResources().getStringArray(R.array.dummy_note_subtitles);
-            String[] dummyNoteText = getResources().getStringArray(R.array.dummy_note_text);
-            String[] dummyNoteColor = getResources().getStringArray(R.array.dummy_note_color);
-            String[] dummyNoteWeb= getResources().getStringArray(R.array.dummy_note_url);
-
-            List<Note> dummyNotes = new ArrayList<>();
-            String time = new SimpleDateFormat("EEEE, dd MMMM yyyy hh:mm a", Locale.getDefault())
-                    .format(new Date());
-
-            for (int i = dummyNoteTitles.length - 1; i >= 0; i--) {
-                Note note = new Note();
-                note.setTitle(dummyNoteTitles[i]);
-                note.setSubtitle(dummyNoteSub[i]);
-                note.setNoteText(dummyNoteText[i]);
-                note.setDateTime(time);
-                note.setColor(dummyNoteColor[i]);
-                note.setImagePath("");
-                note.setWebLink(dummyNoteWeb[i]);
-                dummyNotes.add(note);
-            }
-            mNoteRepository.insertNoteTask(dummyNotes.toArray(new Note[0]));
-            mSharedPref.edit().putBoolean(KEY_FIRST_LAUNCH, false).apply();
-        }
-    }*/
-
-//    private void selectImage() {
-//        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-//        startActivityForResult(intent, REQUEST_CODE_SELECT_IMAGE);
-////        if (intent.resolveActivity(getPackageManager()) != null) {
-////        }
-//    }
-
-
     private void selectImage() {
         ImagePicker.Companion.with(MainActivity.this)
                 .crop()
@@ -513,14 +583,14 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
 
         LayoutInflater inflater = getLayoutInflater();
         View layout = inflater.inflate(R.layout.custom_toast,
-                (ViewGroup) findViewById(R.id.toast_layout_root));
+                findViewById(R.id.containerToastBg));
 
-        TextView text = (TextView) layout.findViewById(R.id.text);
+        TextView text = layout.findViewById(R.id.toastText);
 
         text.setText(message);
 
         Toast toast = new Toast(getApplicationContext());
-        toast.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 250);
+        toast.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 200);
         toast.setDuration(toastLength);
         toast.setView(layout);
         toast.show();
@@ -552,14 +622,63 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
 
     @Override
     public void onNoteClicked(View view, Note note, int position) {
-        noteClickedPosition = position;
-        Intent intent = new Intent(getApplicationContext(), CreateNoteActivity.class);
-        intent.putExtra("isViewOrUpdate", true);
-        intent.putExtra("note", note);
-        startActivityForResult(intent, REQUEST_CODE_UPDATE_NOTE);
-        CustomIntent.customType(MainActivity.this, "fadein-to-fadeout");
+
+        if (selectionMode) {
+            notesAdapter.toggleSelection(note.getId());
+
+            if (notesAdapter.getSelectedCount() == 0) {
+                exitSelectionMode();
+            }
+        } else {
+
+            noteClickedPosition = position;
+            Intent intent = new Intent(getApplicationContext(), CreateNoteActivity.class);
+            intent.putExtra("isViewOrUpdate", true);
+            intent.putExtra("note", note);
+            startActivityForResult(intent, REQUEST_CODE_UPDATE_NOTE);
+            CustomIntent.customType(MainActivity.this, "fadein-to-fadeout");
+        }
 
     }
+
+    @Override
+    public void onNoteLongClicked(Note note) {
+        if (!selectionMode) {
+            selectionMode = true;
+            updateBottomBarMenu();
+        }
+        notesAdapter.toggleSelection(note.getId());
+    }
+
+    private void exitSelectionMode() {
+        selectionMode = false;
+        notesAdapter.clearSelection();
+        updateBottomBarMenu();
+    }
+
+    private void updateBottomBarMenu() {
+
+        Menu menu = bottomAppBar.getMenu();
+
+        if (menu == null) return;
+
+        menu.findItem(R.id.imageCancelSelection)
+                .setVisible(selectionMode);
+
+        menu.findItem(R.id.imageAddNote)
+                .setVisible(!selectionMode);
+
+        menu.findItem(R.id.imageAddImage)
+                .setVisible(!selectionMode);
+
+        menu.findItem(R.id.imageAddWebLink)
+                .setVisible(!selectionMode);
+
+        menu.findItem(R.id.imageAppBarDelete)
+                .setVisible(selectionMode);
+
+    }
+
 
 
     private void getNotes(final int requestCode, final Boolean isNoteDeleted) {
@@ -578,6 +697,7 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
                 super.onPostExecute(notes);
 
                 if (requestCode == REQUEST_CODE_SHOW_NOTES) {
+                    noteList.clear();
                     noteList.addAll(notes);
                     notesAdapter.notifyDataSetChanged();
                 } else if (requestCode == REQUEST_CODE_ADD_NOTE) {
@@ -594,7 +714,7 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
                     }
                 }
 
-                if (noteList.size() != 0) {
+                if (!noteList.isEmpty()) {
                     imageEmpty.setVisibility(View.GONE);
                     textEmpty.setVisibility(View.GONE);
                 } else {
@@ -645,7 +765,7 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
             View view = LayoutInflater.from(this).inflate(
                     R.layout.layout_add_url,
-                    (ViewGroup) findViewById(R.id.layoutAddUrlContainer)
+                    findViewById(R.id.layoutAddUrlContainer)
             );
             builder.setView(view);
 
@@ -692,7 +812,7 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
             View view = LayoutInflater.from(this).inflate(
                     R.layout.layout_change_theme,
-                    (ViewGroup) findViewById(R.id.layoutChangeThemeContainer)
+                    findViewById(R.id.layoutChangeThemeContainer)
             );
             builder.setView(view);
 
@@ -743,6 +863,66 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
         }
         dialogChangeTheme.show();
     }
+    private void showSyncDataDialog() {
+
+        if (dialogSyncData == null) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            View view = LayoutInflater.from(this).inflate(
+                    R.layout.layout_sync_data,
+                    findViewById(R.id.layoutSyncDataContainer)
+            );
+            builder.setView(view);
+
+            dialogSyncData = builder.create();
+
+
+            view.findViewById(R.id.textSync).setOnClickListener(v -> {
+                dialogSyncData.dismiss();
+                showCustomToast("Uploading data to cloud...", Toast.LENGTH_SHORT);
+                uploadDataToFirestoreOrDeleteIt(false);
+            });
+
+            view.findViewById(R.id.textCancel).setOnClickListener(v -> dialogSyncData.dismiss());
+        }
+        dialogSyncData.show();
+
+    }
+
+    @SuppressLint("SetTextI18n")
+    private void showEraseDataDialog() {
+
+        if (dialogEraseData == null) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            View view = LayoutInflater.from(this).inflate(
+                    R.layout.layout_delete_note,
+                    findViewById(R.id.layoutDeleteNoteContainer)
+            );
+            builder.setView(view);
+
+            dialogEraseData = builder.create();
+            if (dialogEraseData.getWindow() != null) {
+                dialogEraseData.getWindow().setBackgroundDrawable(new ColorDrawable(0));
+            }
+            TextView deleteHeader, deleteText, deleteButton;
+            deleteButton = view.findViewById(R.id.textDeleteNote);
+            deleteHeader = view.findViewById(R.id.deleteNoteHeader);
+            deleteText = view.findViewById(R.id.textDeleteNoteMessage);
+
+            deleteButton.setText("ERASE DATA");
+            deleteHeader.setText("Erase Cloud Data");
+            deleteText.setText("Warning: This will erase all your cloud data. Continue?");
+
+            deleteButton.setOnClickListener(v -> {
+                dialogEraseData.dismiss();
+                showCustomToast("Erasing all data from cloud...", Toast.LENGTH_SHORT);
+                uploadDataToFirestoreOrDeleteIt(true);
+            });
+
+            view.findViewById(R.id.textCancel).setOnClickListener(v -> dialogEraseData.dismiss());
+        }
+        dialogEraseData.show();
+
+    }
 
     private void colorBlindTest() {
         String blindUrl = getResources().getString(R.string.color_blind_test);
@@ -766,32 +946,255 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
 
     private String loadEmailLoginPreference() {
         SharedPreferences sharedPreferences = getSharedPreferences("EmailPreferences", MODE_PRIVATE);
-        return sharedPreferences.getString("emailLogin", null); // Default is 2 (two columns)
+        return sharedPreferences.getString("emailLogin", null);
     }
 
-    private void popupSnackbarForCompleteUpdate() {
+    public CollectionReference getCollectionReferenceForNotesWithEmail(){
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        assert currentUser != null;
+        return FirebaseFirestore.getInstance().collection("note_a_lot")
+                .document(Objects.requireNonNull(Objects.requireNonNull(currentUser.getEmail()).toLowerCase())).collection("user_notes");
+    }
 
-        Snackbar snackbar =
-                Snackbar.make(
-                        MainActivity.this.findViewById(R.id.bottomBarContainerLayout),
-                        "New update is ready!",
-                        Snackbar.LENGTH_SHORT);
 
-        snackbar.setAction("Install", new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                showCustomToast("Install", Toast.LENGTH_SHORT);
+    private void fetchDataFromFirestore() {
+        getCollectionReferenceForNotesWithEmail().get().addOnCompleteListener(task -> {
+
+            if (!task.isSuccessful() || task.getResult() == null) {
+                Log.d("Firestore", "Error fetching documents: " + task.getException());
+                showCustomToast("Error fetching documents.", Toast.LENGTH_SHORT);
+                return;
+            }
+
+            if (task.getResult().isEmpty()) {
+                Log.d("Firestore", "No data in Cloud.");
+                showCustomToast("No notes found in cloud.", Toast.LENGTH_SHORT);
+                return;
+            }
+
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            Handler mainHandler = new Handler(Looper.getMainLooper());
+
+            executor.execute(() -> {
+                List<Note> currentNotes = NotesDatabase.getDatabase(getApplicationContext()).noteDao().getAllNotes();
+                List<Integer> existingNoteIds = new ArrayList<>();
+                for (Note note : currentNotes) {
+                    existingNoteIds.add(note.getId());
+                }
+
+                List<Note> notesToInsert = new ArrayList<>();
+                for (QueryDocumentSnapshot snapshot : task.getResult()) {
+                    int id = Integer.parseInt(String.valueOf(snapshot.get("id")));
+                    if (!existingNoteIds.contains(id)) {
+                        Note note = new Note();
+                        note.setId(id);
+                        note.setTitle(snapshot.getString("title"));
+                        note.setDateTime(snapshot.getString("dateTime"));
+                        note.setNoteText(snapshot.getString("noteText"));
+                        note.setColor(snapshot.getString("color"));
+
+                        setImagePath(snapshot.getString("imagePath"), note);
+
+                        String webLink = snapshot.getString("webLink");
+                        if (webLink != null && !webLink.trim().isEmpty()) {
+                            note.setWebLink(webLink);
+                        }
+                        notesToInsert.add(note);
+                    }
+                }
+
+                if (!notesToInsert.isEmpty()) {
+                    NotesDatabase.getDatabase(getApplicationContext()).noteDao().insertNotes(notesToInsert);
+                    Log.d("Firestore", "Inserted " + notesToInsert.size() + " new notes from cloud.");
+                }
+
+                mainHandler.post(() -> {
+                    getNotes(REQUEST_CODE_SHOW_NOTES, false);
+                    if (!notesToInsert.isEmpty()) {
+                        showCustomToast("Cloud data stored locally.", Toast.LENGTH_SHORT);
+                    } else {
+                        showCustomToast("All cloud notes are already synced.", Toast.LENGTH_SHORT);
+                    }
+                    executor.shutdown();
+                });
+            });
+        });
+    }
+
+    private void setImagePath(String imagePath, Note note) {
+
+        String localPath;
+        if (imagePath != null && !imagePath.trim().isEmpty()) {
+            localPath = ImageDownloaderSupabase
+                    .downloadAndSaveImage(
+                            getApplicationContext(),
+                            imagePath
+                    );
+
+            if (localPath != null) {
+                note.setImagePath(localPath);
+            }
+        } else {
+            note.setImagePath(imagePath);
+        }
+    }
+
+    private void uploadDataToFirestoreOrDeleteIt(boolean eraseAllData) {
+        deleteFolderSupabase();
+
+        CollectionReference collectionReference = getCollectionReferenceForNotesWithEmail(); // Delete all the previously present documents in the collection in firestore
+
+        collectionReference.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                WriteBatch batch = FirebaseFirestore.getInstance().batch();
+
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    batch.delete(document.getReference());
+                }
+
+                batch.commit().addOnSuccessListener(aVoid -> {
+
+                    if (eraseAllData) {
+                        Log.d("Firestore", "All documents deleted.");
+                        showCustomToast("All synced data erased from the cloud", Toast.LENGTH_SHORT);
+
+                    } else {
+                        Log.d("Firestore", "All old documents deleted.");
+                        uploadNewDocuments(collectionReference); // Now Upload new documents
+                    }
+
+                }).addOnFailureListener(e -> {
+                    Log.d("Firestore", "Error deleting documents"+ e);
+                    showCustomToast("Some error occurred", Toast.LENGTH_SHORT);
+
+                });
+
+            } else {
+                Log.d("Firestore", "Failed to fetch documents for deletion" + task.getException());
+                showCustomToast("Some error occurred", Toast.LENGTH_SHORT);
+
             }
         });
-
-        snackbar.setActionTextColor(getResources().getColor(R.color.colorAccent));
-        snackbar.show();
     }
+
+    private void uploadNewDocuments(CollectionReference collectionReference) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        executor.execute(() -> {
+            List<Note> allNotes = NotesDatabase.getDatabase(getApplicationContext()).noteDao().getAllNotes();
+
+            if (allNotes.isEmpty()) {
+                runOnUiThread(() -> showCustomToast("No notes found to sync.", Toast.LENGTH_SHORT));
+                executor.shutdown();
+                return;
+            }
+
+
+            CountDownLatch latch = new CountDownLatch(allNotes.size());
+
+            for (Note note : allNotes) {
+                if (!note.getImagePath().isEmpty()) {
+                    try {
+
+                        byte[] imageByteArray = filePathToByteArraySupabase(note.getImagePath());
+                        String imageUrlSupabase = SupabaseHelperClassKotlin
+                                .uploadImageBlocking(
+                                        getString(R.string.supabase_bucket_name),
+                                        getFolderNamePreference() +"/"+ System.currentTimeMillis() + ".jpg",
+                                        imageByteArray
+                                );
+
+                        Note tempNote = createTempNote(note, imageUrlSupabase);
+
+                        collectionReference
+                                .document(String.valueOf(note.getId()))
+                                .set(tempNote)
+                                .addOnSuccessListener(aVoid -> {
+                                    Log.d("Firestore", "Note uploaded: " + note.getId());
+                                    latch.countDown();
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.d("Firestore", "Failed to upload note: " + note.getId() + ", " + e);
+                                    latch.countDown();
+                                });
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    collectionReference
+                            .document(String.valueOf(note.getId()))
+                            .set(note)
+                            .addOnSuccessListener(aVoid -> {
+                                Log.d("Firestore", "Note uploaded: " + note.getId());
+                                latch.countDown();
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.d("Firestore", "Failed to upload note: " + note.getId() + ", " + e);
+                                latch.countDown();
+                            });
+                }
+            }
+
+            try {
+                latch.await(); // Wait for all uploads to finish
+                runOnUiThread(() -> showCustomToast("Data Synced successfully", Toast.LENGTH_SHORT));
+            } catch (InterruptedException e) {
+                Log.d("Firestore", "Error while uploading notes" + e);
+                runOnUiThread(() -> showCustomToast("Upload interrupted", Toast.LENGTH_SHORT));
+            }
+
+            executor.shutdown();
+        });
+    }
+
+    private void deleteFolderSupabase() {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        executor.execute(() -> {
+            SupabaseHelperClassKotlin.deleteFolderBlocking(
+                    getString(R.string.supabase_bucket_name),
+                    getFolderNamePreference()
+            );
+            executor.shutdown();
+        });
+    }
+
+    private byte[] filePathToByteArraySupabase(String filePath) throws IOException {
+        File file = new File(filePath);
+        return Files.readAllBytes(file.toPath());
+    }
+
+    private void saveFolderNamePreference(String folderName) {
+        SharedPreferences sharedPreferences = getSharedPreferences("FolderNamePreferences", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString("usersFolderName", folderName);
+        editor.apply();
+    }
+    private String getFolderNamePreference() {
+        SharedPreferences sharedPreferences = getSharedPreferences("FolderNamePreferences", MODE_PRIVATE);
+        return sharedPreferences.getString("usersFolderName", null);
+    }
+
+    private Note createTempNote(Note original, String imageUrlSupabase) {
+        Note tempNote = new Note();
+        tempNote.setId(original.getId());
+        tempNote.setTitle(original.getTitle());
+        tempNote.setNoteText(original.getNoteText());
+        tempNote.setDateTime(original.getDateTime());
+        tempNote.setColor(original.getColor());
+        tempNote.setImagePath(imageUrlSupabase);
+        tempNote.setWebLink(original.getWebLink());
+
+        return tempNote;
+    }
+
+
+
+
 
     @Override
     protected void onResume() {
         super.onResume();
-
     }
 
     @Override
@@ -804,8 +1207,11 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
 
         if (drawerLayout.isDrawerVisible(GravityCompat.END))
             drawerLayout.closeDrawer(GravityCompat.END);
+        else if (selectionMode)
+            exitSelectionMode();
         else
             super.onBackPressed();
+
     }
 //    @Override
 //    public void onStart() {
@@ -813,5 +1219,45 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
 //        // Check if user is signed in (non-null) and update UI accordingly.
 //        FirebaseUser currentUser = auth.getCurrentUser();
 //        updateUI(currentUser);
+//    }
+
+        /*private void defaultFirstNote() {
+
+        SharedPreferences mSharedPref ;
+        mSharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        boolean isFirstLaunch = mSharedPref.getBoolean(KEY_FIRST_LAUNCH, true);
+
+        if (isFirstLaunch) {
+            String[] dummyNoteTitles = getResources().getStringArray(R.array.dummy_note_titles);
+            String[] dummyNoteSub = getResources().getStringArray(R.array.dummy_note_subtitles);
+            String[] dummyNoteText = getResources().getStringArray(R.array.dummy_note_text);
+            String[] dummyNoteColor = getResources().getStringArray(R.array.dummy_note_color);
+            String[] dummyNoteWeb= getResources().getStringArray(R.array.dummy_note_url);
+
+            List<Note> dummyNotes = new ArrayList<>();
+            String time = new SimpleDateFormat("EEEE, dd MMMM yyyy hh:mm a", Locale.getDefault())
+                    .format(new Date());
+
+            for (int i = dummyNoteTitles.length - 1; i >= 0; i--) {
+                Note note = new Note();
+                note.setTitle(dummyNoteTitles[i]);
+                note.setSubtitle(dummyNoteSub[i]);
+                note.setNoteText(dummyNoteText[i]);
+                note.setDateTime(time);
+                note.setColor(dummyNoteColor[i]);
+                note.setImagePath("");
+                note.setWebLink(dummyNoteWeb[i]);
+                dummyNotes.add(note);
+            }
+            mNoteRepository.insertNoteTask(dummyNotes.toArray(new Note[0]));
+            mSharedPref.edit().putBoolean(KEY_FIRST_LAUNCH, false).apply();
+        }
+    }*/
+
+    //    private void selectImage() {
+//        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+//        startActivityForResult(intent, REQUEST_CODE_SELECT_IMAGE);
+////        if (intent.resolveActivity(getPackageManager()) != null) {
+////        }
 //    }
 }
