@@ -188,7 +188,7 @@ public class CreateAccountActivity extends AppCompatActivity implements MyLoadin
                             showCustomToast("Google Sign-in Failed"+Objects.requireNonNull(e.getMessage()), Toast.LENGTH_LONG);
                         }
                     } else {
-                        showCustomToast("Some error occurred"+ result.getResultCode(), Toast.LENGTH_LONG);
+                        showCustomToast("Some error occurred", Toast.LENGTH_LONG);
                         dialog.dismiss(); // Hide loading dialog if the result code is not OK
                     }
                 }

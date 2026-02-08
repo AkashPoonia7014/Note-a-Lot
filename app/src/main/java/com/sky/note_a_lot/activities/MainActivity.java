@@ -874,6 +874,9 @@ public class MainActivity extends AppCompatActivity implements NotesListener, Na
             builder.setView(view);
 
             dialogSyncData = builder.create();
+            if (dialogSyncData.getWindow() != null) {
+                dialogSyncData.getWindow().setBackgroundDrawable(new ColorDrawable(0));
+            }
 
 
             view.findViewById(R.id.textSync).setOnClickListener(v -> {
